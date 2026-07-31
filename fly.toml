@@ -1,0 +1,35 @@
+# Fly.io deployment config.
+# Before first deploy:
+#   1. flyctl auth login
+#   2. flyctl launch --no-deploy   (this generates/confirms this file — say NO to overwriting it, or re-paste it after)
+#   3. flyctl volumes create ff_data --size 1 --region <same region as your app>
+#   4. flyctl secrets set PAYSTACK_SECRET_KEY=sk_live_xxx PAYSTACK_PUBLIC_KEY=pk_live_xxx PUBLIC_BASE_URL=https://<your-app>.fly.dev
+#   5. flyctl deploy
+
+app = "ff-likes-store"          # change to whatever name you picked in `flyctl launch`
+primary_region = "lhr"          # pick the region closest to your users, e.g. "lhr" (London) is close to Nigeria
+
+[build]
+
+[env]
+  PORT = "8000"
+
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+  auto_stop_machines = false     # keep it running — Paystack webhooks need the app reachable at all times
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+[mounts]
+  source = "ff_data"             # matches the volume created in step 3 above
+  destination = "/app/data"      # matches where db.py writes store.db
